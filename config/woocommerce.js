@@ -1,9 +1,13 @@
 /**
  * Configuración de WooCommerce API
+ * 
+ * NOTA: Las credenciales ahora se manejan de forma segura en el servidor
+ * a través de funciones serverless de Vercel (/api/products.js y /api/orders.js)
+ * 
+ * Este archivo se mantiene solo por compatibilidad con imports existentes,
+ * pero ya no contiene información sensible.
  */
 export const WC_CONFIG = {
-    url: 'https://travelsuites.cl',
-    consumerKey: 'ck_17efb8d2c990cff8ad90aabd24e1d3c05a1ab5e8',
-    consumerSecret: 'cs_e1fb69c842c541384ee89cc5881ab37d6c876b2b',
-    version: 'wc/v3'
+    // Las credenciales están ahora en variables de entorno del servidor
+    // Ver: .env.local (desarrollo) y Vercel Dashboard (producción)
 };

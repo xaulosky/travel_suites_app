@@ -7,13 +7,15 @@ import { WC_CONFIG } from '../config/woocommerce.js';
 
 /**
  * Obtiene todos los productos (departamentos) desde WooCommerce
+ * Usa la API serverless de Vercel para mantener credenciales seguras
  * @returns {Promise<Array>} Array de propiedades mapeadas
  */
 export async function fetchProducts() {
-    const { url, consumerKey, consumerSecret, version } = WC_CONFIG;
-    const apiUrl = `${url}/wp-json/${version}/products?consumer_key=${consumerKey}&consumer_secret=${consumerSecret}&per_page=100`;
-
     try {
+        // En producción, llamar a la API de Vercel
+        // En desarrollo local con vercel dev, también funcionará
+        const apiUrl = '/api/products';
+
         const response = await fetch(apiUrl);
 
         if (!response.ok) {
@@ -25,7 +27,7 @@ export async function fetchProducts() {
         // Mapear productos de WooCommerce a estructura de propiedades
         return products.map(product => mapProductToProperty(product));
     } catch (error) {
-        console.error('Error fetching products from WooCommerce:', error);
+        console.error('Error fetching products from API:', error);
         throw error;
     }
 }
@@ -285,14 +287,15 @@ export function getCachedProducts() {
 }
 /**
  * Crea una orden en WooCommerce
+ * Usa la API serverless de Vercel para mantener credenciales seguras
  * @param {Object} orderData - Datos de la orden
  * @returns {Promise<Object>} Orden creada
  */
 export async function createOrder(orderData) {
-    const { url, consumerKey, consumerSecret, version } = WC_CONFIG;
-    const apiUrl = `${url}/wp-json/${version}/orders?consumer_key=${consumerKey}&consumer_secret=${consumerSecret}`;
-
     try {
+        // Llamar a la API serverless de Vercel
+        const apiUrl = '/api/orders';
+
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
@@ -309,7 +312,7 @@ export async function createOrder(orderData) {
 
         return data;
     } catch (error) {
-        console.error('Error creating order in WooCommerce:', error);
+        console.error('Error creating order via API:', error);
         throw error;
     }
 }
