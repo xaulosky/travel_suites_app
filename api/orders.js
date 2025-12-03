@@ -2,7 +2,17 @@
  * Vercel Serverless Function - Create Order
  * Proxy para crear órdenes en WooCommerce de forma segura
  */
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
+    // Configurar CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Manejar preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     // Solo permitir POST
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -14,7 +24,11 @@ module.exports = async (req, res) => {
     const CONSUMER_SECRET = process.env.WOOCOMMERCE_CONSUMER_SECRET;
 
     if (!WC_URL || !CONSUMER_KEY || !CONSUMER_SECRET) {
-        return res.status(500).json({ error: 'WooCommerce credentials not configured' });
+        console.error('Missing WooCommerce credentials');
+        return res.status(500).json({
+            error: 'WooCommerce credentials not configured',
+            details: 'Please configure environment variables in Vercel Dashboard'
+        });
     }
 
     try {
@@ -24,38 +38,50 @@ module.exports = async (req, res) => {
         }
 
         // Construir URL con autenticación
-        const url = new URL(`${WC_URL}/wp-json/wc/v3/orders`);
-        url.searchParams.append('consumer_key', CONSUMER_KEY);
-        url.searchParams.append('consumer_secret', CONSUMER_SECRET);
+        const url = `${WC_URL}/wp-json/wc/v3/orders?consumer_key=${CONSUMER_KEY}&consumer_secret=${CONSUMER_SECRET}`;
 
-        // Hacer petición a WooCommerce
-        const response = await fetch(url.toString(), {
+        console.log('Creating order in WooCommerce...');
+
+        // Hacer petición a WooCommerce con timeout
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+
+        const response = await fetch(url, {
             method: 'POST',
+            signal: controller.signal,
             headers: {
                 'Content-Type': 'application/json',
+                'User-Agent': 'Vercel-Serverless-Function'
             },
             body: JSON.stringify(req.body)
         });
 
+        clearTimeout(timeout);
+
+        const data = await response.json();
+
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `WooCommerce API error: ${response.status}`);
+            console.error('WooCommerce API error:', data);
+            throw new Error(data.message || `WooCommerce API error: ${response.status}`);
         }
 
-        const order = await response.json();
+        console.log('Order created successfully:', data.id);
 
-        // Configurar CORS
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'POST');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-        return res.status(200).json(order);
+        return res.status(200).json(data);
 
     } catch (error) {
-        console.error('Error creating order:', error);
+        console.error('Error creating order:', error.message);
+
+        if (error.name === 'AbortError') {
+            return res.status(504).json({
+                error: 'Request timeout',
+                message: 'WooCommerce API took too long to respond'
+            });
+        }
+
         return res.status(500).json({
             error: 'Failed to create order',
             message: error.message
         });
     }
-};
+}
