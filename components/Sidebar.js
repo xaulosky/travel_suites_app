@@ -12,6 +12,7 @@ export function Sidebar(activeTab) {
         { id: 'calendar', label: 'Calendario', icon: ICONS.calendar },
         { id: 'protocols', label: 'Protocolos', icon: ICONS.book },
         { id: 'directory', label: 'Directorio', icon: ICONS.users },
+        { id: 'datos-importantes', label: 'Datos Importantes', icon: ICONS.fileText },
     ];
 
     const navItems = tabs.map(tab => {

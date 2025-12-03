@@ -4,6 +4,7 @@ import { PropertiesView } from '../components/views/PropertiesView.js';
 import { ProtocolsView } from '../components/views/ProtocolsView.js';
 import { DirectoryView } from '../components/views/DirectoryView.js';
 import { CalendarView } from '../components/views/CalendarView.js';
+import { DatosImportantesView } from '../components/views/DatosImportantesView.js';
 
 /**
  * Router
@@ -56,5 +57,7 @@ export function renderContent(state) {
         container.innerHTML = DirectoryView();
     } else if (state.activeTab === 'calendar') {
         container.innerHTML = CalendarView(state);
+    } else if (state.activeTab === 'datos-importantes') {
+        container.innerHTML = DatosImportantesView();
     }
 }

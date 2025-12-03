@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datos Importantes - Travel Suites</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+        }
+
+        .section-title {
+            color: #667eea;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+            border-left-width: 8px;
+            transform: translateX(4px);
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            color: #1a202c;
+            font-size: 1.125rem;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .info-value a {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .info-value a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .highlight {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .section {
+                padding: 1.25rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            table {
+                font-size: 0.875rem;
+            }
+            
+            th, td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 DATOS IMPORTANTES - TRAVEL SUITES</h1>
+
+        <!-- Sección Banco -->
+        <div class="section">
+            <h2 class="section-title">🏦 Información Bancaria</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-label">Banco</div>
+                    <div class="info-value">RUT</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Cuenta</div>
+                    <div class="info-value">16.756.974-9 <span class="badge">GESTIÓN</span></div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">IVA</div>
+                    <div class="info-value">EXENTA</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Sitio Web</div>
+                    <div class="info-value"><a href="https://officebanking.cl" target="_blank">officebanking</a></div>
+                </div>
+            </div>
+            <div class="info-grid" style="margin-top: 1.5rem;">
+                <div class="info-card">
+                    <div class="info-label">Banco</div>
+                    <div class="info-value">CLAVE</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Cuenta</div>
+                    <div class="info-value">Nat.87 <span class="badge">RED</span></div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">IVA</div>
+                    <div class="info-value">AFECTA</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección SII -->
+        <div class="section">
+            <h2 class="section-title">📄 Certificado Digital SII</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-label">RUT</div>
+                    <div class="info-value">-</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Clave</div>
+                    <div class="info-value">Nata 3523</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Código</div>
+                    <div class="info-value">1675</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección GETNET -->
+        <div class="section">
+            <h2 class="section-title">💳 GETNET - Plataforma de Pagos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Link/Usuario</th>
+                        <th>IVA/Estado</th>
+                        <th>Sitio Web/Notas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>RED</strong></td>
+                        <td>Travel_Suites</td>
+                        <td>afecto</td>
+                        <td><a href="https://micrositios.getnet.cl" target="_blank">micrositios getnet</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>GESTIÓN</strong></td>
+                        <td>Travelsuites</td>
+                        <td>exento</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Sección Contactos y Plataformas -->
+        <div class="section">
+            <h2 class="section-title">📧 Contactos y Plataformas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Plataforma</th>
+                        <th>Correo/Usuario</th>
+                        <th>Clave/Notas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>SITIO</strong></td>
+                        <td>CORREO</td>
+                        <td><span class="highlight">CLAVE</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>correo</strong></td>
+                        <td><a href="mailto:contacto@travelsuites.cl">contacto@travelsuites.cl</a></td>
+                        <td>TSuites#2025</td>
+                    </tr>
+                    <tr>
+                        <td><strong>airbnb</strong></td>
+                        <td><a href="mailto:contacto@travelsuites.cl">contacto@travelsuites.cl</a></td>
+                        <td>Red.2024*</td>
+                    </tr>
+                    <tr>
+                        <td><strong>booking</strong></td>
+                        <td><a href="mailto:natachapenalillo@gmail.com">natachapenalillo@gmail.com</a></td>
+                        <td>Travel2024</td>
+                    </tr>
+                    <tr>
+                        <td><strong>travel.cl</strong></td>
+                        <td><a href="mailto:contacto@travelsuites.cl">contacto@travelsuites.cl</a></td>
+                        <td>TSuites#2024</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Quincho PL</strong></td>
+                        <td><a href="mailto:contacto@travelsuites.cl">contacto@travelsuites.cl</a></td>
+                        <td>Travel2024</td>
+                    </tr>
+                    <tr>
+                        <td><strong>micrositios</strong></td>
+                        <td>getnet_napenalillo</td>
+                        <td>Travel202424</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Getnet.cl/comercio</strong></td>
+                        <td><a href="mailto:ngarcia@travelsuites.cl">ngarcia@travelsuites.cl</a></td>
+                        <td>Red 2025</td>
+                    </tr>
+                    <tr>
+                        <td><strong>pagina waty</strong></td>
+                        <td>correo: <a href="mailto:contacto@travelsuites.cl">contacto@travelsuites.cl</a> / ID: 457313</td>
+                        <td>Travel2025@</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Portal comercios</strong></td>
+                        <td>Usuario: <a href="mailto:ngarcia@travelsuites.cl">ngarcia@travelsuites.cl</a></td>
+                        <td>Red 2025</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
