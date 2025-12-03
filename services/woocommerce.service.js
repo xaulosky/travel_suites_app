@@ -283,3 +283,33 @@ export function getCachedProducts() {
 
     return null;
 }
+/**
+ * Crea una orden en WooCommerce
+ * @param {Object} orderData - Datos de la orden
+ * @returns {Promise<Object>} Orden creada
+ */
+export async function createOrder(orderData) {
+    const { url, consumerKey, consumerSecret, version } = WC_CONFIG;
+    const apiUrl = `${url}/wp-json/${version}/orders?consumer_key=${consumerKey}&consumer_secret=${consumerSecret}`;
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error creating order in WooCommerce:', error);
+        throw error;
+    }
+}

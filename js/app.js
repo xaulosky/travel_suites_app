@@ -1,8 +1,9 @@
 import { setActiveTab, renderNavigation, renderContent } from './router.js';
 import { openModal, closeModal } from '../components/Modal.js';
 import { copyToClipboard } from './utils.js';
-import { fetchProducts, getCachedProducts, cacheProducts } from '../services/woocommerce.service.js';
-import { calculateQuote } from '../services/booking.service.js';
+import { fetchProducts, getCachedProducts, cacheProducts, createOrder } from '../services/woocommerce.service.js';
+import { calculateQuote, formatDateAPI } from '../services/booking.service.js';
+import { fetchAllCalendarEvents, isDateOccupied, getCachedCalendarEvents, cacheCalendarEvents } from '../services/calendar.service.js';
 import { PROPERTIES_DATA, PROPERTIES_DATA_FALLBACK } from '../data/data.js';
 
 /**
@@ -21,9 +22,11 @@ const state = {
     // Calendar state
     selectedCalendarProperty: null,
     calendarDate: new Date(),
+    calendarEvents: [], // Eventos de ocupación (iCal)
+    calendarSearchTerm: '', // Buscador de propiedades en calendario
+    calendarSidebarOpen: false, // Estado del sidebar en móvil
     // Booking state
-    selectionStart: null,
-    selectionEnd: null,
+    selectedDates: [], // Array of ISO date strings (YYYY-MM-DD)
     bookingGuestCount: 1,
     bookingQuote: null,
     guestDetails: { name: '', email: '', phone: '' }
@@ -97,17 +100,90 @@ function setFilter(type) {
 }
 
 /**
- * Cambia la propiedad seleccionada en el calendario
- * @param {string} propertyId - ID de la propiedad
+ * Filtra la lista de propiedades en el calendario
+ * @param {string} val 
  */
-function setCalendarProperty(propertyId) {
-    state.selectedCalendarProperty = propertyId;
+function setCalendarSearch(val) {
+    state.calendarSearchTerm = val;
+    renderContent(state);
+
+    // Mantener foco en el buscador del calendario
+    const input = document.getElementById('calendar-search');
+    if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+    }
+}
+
+/**
+ * Alterna la visibilidad del sidebar de propiedades en móvil
+ */
+function toggleCalendarSidebar() {
+    state.calendarSidebarOpen = !state.calendarSidebarOpen;
     renderContent(state);
 }
 
 /**
- * Navega al mes anterior
+ * Carga los eventos del calendario para una propiedad
+ * @param {string} propertyId 
  */
+async function loadCalendarEvents(propertyId) {
+    const property = PROPERTIES_DATA.find(p => p.id === propertyId);
+    if (!property) return;
+
+    // Resetear eventos actuales mientras carga
+    state.calendarEvents = [];
+
+    // Intentar desde cache
+    const cached = getCachedCalendarEvents(propertyId);
+    if (cached) {
+        state.calendarEvents = cached;
+        renderContent(state);
+        return;
+    }
+
+    // Si no hay cache, buscar en APIs externas
+    if (property.externalCalendars) {
+        const urls = Object.values(property.externalCalendars).filter(url => url);
+        if (urls.length > 0) {
+            try {
+                // Mostrar loading si es necesario (opcional)
+                const events = await fetchAllCalendarEvents(urls);
+                state.calendarEvents = events;
+                cacheCalendarEvents(propertyId, events);
+                renderContent(state);
+            } catch (error) {
+                console.error('Error loading calendar events:', error);
+            }
+        }
+    }
+}
+/**
+ * Cambia la propiedad seleccionada en el calendario
+ * @param {string} propertyId - ID de la propiedad
+ */
+function setCalendarProperty(propertyId) {
+    // Guardar posición del scroll
+    const list = document.getElementById('calendar-property-list');
+    const scrollTop = list ? list.scrollTop : 0;
+
+    state.selectedCalendarProperty = propertyId;
+    state.selectedDates = []; // Resetear selección al cambiar propiedad
+    state.bookingQuote = null;
+
+    loadCalendarEvents(propertyId); // Cargar eventos reales
+    renderContent(state);
+
+    // Restaurar posición del scroll
+    // Necesitamos esperar a que se renderice
+    setTimeout(() => {
+        const newList = document.getElementById('calendar-property-list');
+        if (newList) {
+            newList.scrollTop = scrollTop;
+        }
+    }, 0);
+}
+
 function previousMonth() {
     const current = state.calendarDate;
     state.calendarDate = new Date(current.getFullYear(), current.getMonth() - 1, 1);
@@ -135,7 +211,10 @@ function viewPropertyCalendar(propertyId) {
     state.activeTab = 'calendar';
     state.selectedCalendarProperty = propertyId;
     state.calendarDate = new Date(); // Resetear a mes actual
+    state.selectedDates = []; // Resetear selección
+    state.bookingQuote = null;
 
+    loadCalendarEvents(propertyId); // Cargar eventos reales
     renderNavigation(state);
     renderContent(state);
 
@@ -144,30 +223,63 @@ function viewPropertyCalendar(propertyId) {
 }
 
 /**
- * Selecciona una fecha en el calendario
+ * Selecciona fechas en el calendario
  * @param {string} dateStr - Fecha en formato ISO (YYYY-MM-DD)
+ * @param {Event} event - Evento del click (para detectar Shift/Ctrl)
  */
-function selectDate(dateStr) {
-    const date = new Date(dateStr + 'T00:00:00'); // Asegurar hora local
+function selectDate(dateStr, event) {
+    const date = new Date(dateStr + 'T00:00:00');
 
-    if (!state.selectionStart || (state.selectionStart && state.selectionEnd)) {
-        // Nueva selección
-        state.selectionStart = date;
-        state.selectionEnd = null;
-        state.bookingQuote = null;
-    } else {
-        // Completar rango
-        if (date < state.selectionStart) {
-            state.selectionEnd = state.selectionStart;
-            state.selectionStart = date;
-        } else {
-            state.selectionEnd = date;
+    // Manejo de teclas modificadoras
+    const isCtrl = event && (event.ctrlKey || event.metaKey);
+    const isShift = event && event.shiftKey;
+
+    if (isShift && state.selectedDates.length > 0) {
+        // Selección de Rango (Shift)
+        const lastSelected = new Date(state.selectedDates[state.selectedDates.length - 1] + 'T00:00:00');
+        const start = date < lastSelected ? date : lastSelected;
+        const end = date < lastSelected ? lastSelected : date;
+
+        // Generar todas las fechas en el rango
+        const range = [];
+        let current = new Date(start);
+        while (current <= end) {
+            range.push(current.toISOString().split('T')[0]);
+            current.setDate(current.getDate() + 1);
         }
 
-        // Calcular cotización al completar rango
-        updateQuote();
+        // Unir con existentes o reemplazar según lógica deseada
+        // Aquí reemplazamos para comportamiento estándar de Shift
+        // Pero si quieren "agregar rango", sería diferente. 
+        // Asumiremos comportamiento estándar: Shift define un nuevo rango desde el último punto.
+
+        // Para simplificar y evitar conflictos con Ctrl, si es Shift, reconstruimos la selección
+        // desde el último punto de anclaje hasta el nuevo.
+        // Pero para ser más amigable: Agregamos el rango al set existente (o lo reseteamos?)
+        // Lo más intuitivo en calendarios: Shift extiende desde el último click.
+
+        // Vamos a hacer: Mantener lo que estaba si se usa Ctrl? No, Shift suele ser rango exclusivo.
+        // Vamos a limpiar y setear el rango.
+        state.selectedDates = range;
+
+    } else if (isCtrl) {
+        // Selección Múltiple (Ctrl) - Toggle
+        const index = state.selectedDates.indexOf(dateStr);
+        if (index >= 0) {
+            state.selectedDates.splice(index, 1);
+        } else {
+            state.selectedDates.push(dateStr);
+        }
+    } else {
+        // Selección Simple (Click) - Nuevo inicio
+        // Si ya estaba seleccionada y es la única, la deseleccionamos? No, mejor siempre seleccionar.
+        state.selectedDates = [dateStr];
     }
 
+    // Ordenar fechas para consistencia
+    state.selectedDates.sort();
+
+    updateQuote();
     renderContent(state);
 }
 
@@ -195,13 +307,12 @@ function updateGuestDetails(field, value) {
  * Calcula y actualiza la cotización actual
  */
 function updateQuote() {
-    if (state.selectionStart && state.selectionEnd && state.selectedCalendarProperty) {
+    if (state.selectedDates.length > 0 && state.selectedCalendarProperty) {
         const property = PROPERTIES_DATA.find(p => p.id === state.selectedCalendarProperty);
         if (property) {
             state.bookingQuote = calculateQuote(
                 property,
-                state.selectionStart,
-                state.selectionEnd,
+                state.selectedDates,
                 state.bookingGuestCount
             );
         }
@@ -210,6 +321,9 @@ function updateQuote() {
 
 /**
  * Crea la reserva (Mock por ahora)
+ */
+/**
+ * Crea la reserva real en WooCommerce
  */
 async function createBooking() {
     if (!state.bookingQuote || state.bookingQuote.error) return;
@@ -220,18 +334,96 @@ async function createBooking() {
         return;
     }
 
-    alert(`¡Reserva Simulada!\n\nPropiedad: ${state.selectedCalendarProperty}\nTotal: ${state.bookingQuote.formattedTotal}\nCliente: ${name}`);
+    const property = PROPERTIES_DATA.find(p => p.id === state.selectedCalendarProperty);
+    if (!property) return;
 
-    // Resetear selección
-    state.selectionStart = null;
-    state.selectionEnd = null;
-    state.bookingQuote = null;
-    state.guestDetails = { name: '', email: '', phone: '' };
-    renderContent(state);
+    // Mostrar estado de carga
+    const confirmBtn = document.querySelector('button[onclick="window.createBooking()"]');
+    const originalText = confirmBtn ? confirmBtn.innerText : 'Confirmar Reserva';
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerText = 'Procesando...';
+    }
+
+    try {
+        // Preparar datos de la orden
+        const orderData = {
+            payment_method: 'bacs',
+            payment_method_title: 'Transferencia Bancaria',
+            set_paid: false,
+            billing: {
+                first_name: name.split(' ')[0],
+                last_name: name.split(' ').slice(1).join(' ') || '.',
+                email: email,
+                phone: phone
+            },
+            line_items: [
+                {
+                    product_id: property.productId,
+                    quantity: 1,
+                    meta_data: [
+                        {
+                            key: 'Reserva',
+                            value: `${state.selectedDates.join(', ')}`
+                        },
+                        {
+                            key: 'Noches',
+                            value: state.selectedDates.length
+                        },
+                        {
+                            key: 'Huéspedes',
+                            value: state.bookingGuestCount
+                        },
+                        {
+                            key: 'Check-in',
+                            value: state.selectedDates[0]
+                        },
+                        {
+                            key: 'Check-out',
+                            value: state.selectedDates[state.selectedDates.length - 1] // Aproximado si es continuo
+                        }
+                    ]
+                }
+            ]
+        };
+
+        console.log('Enviando orden:', orderData);
+        const order = await createOrder(orderData);
+        console.log('Orden creada:', order);
+
+        alert(`¡Reserva Exitosa!\n\nID de Orden: #${order.id}\nSe ha enviado un correo a ${email} con los detalles para el pago.`);
+
+        // Resetear selección
+        state.selectionStart = null;
+        state.selectionEnd = null;
+        state.bookingQuote = null;
+        state.guestDetails = { name: '', email: '', phone: '' };
+        renderContent(state);
+
+    } catch (error) {
+        console.error('Error al crear reserva:', error);
+        alert('Hubo un error al procesar la reserva. Por favor intente nuevamente.');
+    } finally {
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerText = originalText;
+        }
+    }
 }
 
 // Exponer funciones globales necesarias para onclick handlers
-window.setActiveTab = (tab) => setActiveTab(tab, state);
+window.setActiveTab = (tab) => {
+    if (tab === 'calendar') {
+        const propId = state.selectedCalendarProperty || (PROPERTIES_DATA.length > 0 ? PROPERTIES_DATA[0].id : null);
+        if (propId) {
+            state.selectedCalendarProperty = propId;
+            loadCalendarEvents(propId);
+        }
+    }
+    setActiveTab(tab, state);
+};
+window.setCalendarSearch = setCalendarSearch;
+window.toggleCalendarSidebar = toggleCalendarSidebar;
 window.setSearch = setSearch;
 window.setFilter = setFilter;
 window.openModal = openModal;

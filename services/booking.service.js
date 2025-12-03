@@ -11,14 +11,19 @@
  * @param {number} guests - Cantidad de huéspedes
  * @returns {Object} Cotización detallada
  */
-export function calculateQuote(property, checkIn, checkOut, guests) {
+/**
+ * Calcula la cotización para una reserva
+ * @param {Object} property - Objeto de la propiedad
+ * @param {Array} selectedDates - Array de fechas seleccionadas (YYYY-MM-DD)
+ * @param {number} guests - Cantidad de huéspedes
+ * @returns {Object} Cotización detallada
+ */
+export function calculateQuote(property, selectedDates, guests) {
     // Validaciones básicas
-    if (!property || !checkIn || !checkOut) return null;
-    if (checkIn >= checkOut) return null;
+    if (!property || !selectedDates || selectedDates.length === 0) return null;
 
-    // Calcular número de noches
-    const oneDay = 24 * 60 * 60 * 1000;
-    const nights = Math.round(Math.abs((checkOut - checkIn) / oneDay));
+    // Calcular número de noches (cada fecha seleccionada es una noche)
+    const nights = selectedDates.length;
 
     // Validar estadía mínima
     const minDuration = property.duration?.min || 1;
