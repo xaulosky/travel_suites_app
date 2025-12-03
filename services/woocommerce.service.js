@@ -1,4 +1,5 @@
 import { WC_CONFIG } from '../config/woocommerce.js';
+import { getDepartmentInfo } from '../data/departmentInfo.js';
 
 /**
  * Servicio de WooCommerce
@@ -168,6 +169,21 @@ function mapProductToProperty(product) {
         ? product.description.replace(/<[^>]*>/g, '').trim()
         : '';
 
+    // ===== FUSIONAR CON INFORMACIÓN REAL DEL DEPARTAMENTO =====
+    const deptInfo = getDepartmentInfo(product.sku, product.name, product.id);
+
+    // WiFi: usar info real si existe, sino genérico
+    const wifiInfo = deptInfo?.wifi || {
+        ssid: `TravelSuites_${product.id}`,
+        pass: 'travel2025'
+    };
+
+    // Camas: usar descripción real si existe, sino la generada
+    const finalBedsDescription = deptInfo?.beds || bedsDescription;
+
+    // Distribución: agregar si existe
+    const distribucion = deptInfo?.distribucion || null;
+
     return {
         // Campos básicos
         id: id,
@@ -176,16 +192,14 @@ function mapProductToProperty(product) {
         type: 'departamento',
         address: ubicacion,
 
-        // WiFi (genérico por ahora, podrías agregar campo personalizado en WooCommerce)
-        wifi: {
-            ssid: `TravelSuites_${product.id}`,
-            pass: 'travel2025'
-        },
+        // WiFi (ahora con datos reales)
+        wifi: wifiInfo,
 
         // Habitaciones y capacidad
         rooms: numHabitaciones,
-        beds: bedsDescription,
+        beds: finalBedsDescription,
         bathrooms: numBanos,
+        distribucion: distribucion, // Nuevo campo
         capacity: {
             min: minPersons,
             max: maxPersons,

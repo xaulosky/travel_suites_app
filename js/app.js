@@ -62,13 +62,25 @@ async function init() {
         state.error = null;
         renderContent(state);
 
+
     } catch (error) {
         console.error('❌ Error cargando propiedades:', error);
         console.log('⚠️ Usando datos de respaldo (fallback)');
 
-        // Usar datos de fallback
+        // Usar datos de fallback y normalizar campos faltantes
+        const normalizedFallback = PROPERTIES_DATA_FALLBACK.map(prop => ({
+            ...prop,
+            // Agregar campos de precio si no existen (para desarrollo local)
+            price: prop.price || 50000,
+            priceFormatted: prop.priceFormatted || `$${(prop.price || 50000).toLocaleString('es-CL')}`,
+            // Agregar otros campos que podrían faltar
+            bathrooms: prop.bathrooms || (prop.amenities && prop.amenities[0] ? parseInt(prop.amenities[0]) || 1 : 1),
+            image: prop.image || null,
+            images: prop.images || []
+        }));
+
         PROPERTIES_DATA.length = 0;
-        PROPERTIES_DATA.push(...PROPERTIES_DATA_FALLBACK);
+        PROPERTIES_DATA.push(...normalizedFallback);
 
         state.isLoading = false;
         state.error = 'No se pudieron cargar las propiedades desde WooCommerce. Mostrando datos de respaldo.';
