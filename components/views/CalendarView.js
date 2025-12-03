@@ -224,6 +224,21 @@ export function CalendarView(state) {
                     </button>
                 </div>
                 
+                <!-- Loading Overlay -->
+                ${state.calendarLoading ? `
+                    <div class="absolute inset-0 bg-white/80 backdrop-blur-sm z-30 flex items-center justify-center">
+                        <div class="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 border border-slate-200">
+                            <div class="relative">
+                                <div class="w-16 h-16 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin"></div>
+                            </div>
+                            <div class="text-center">
+                                <h3 class="font-bold text-slate-800 text-lg mb-1">Sincronizando calendario</h3>
+                                <p class="text-slate-500 text-sm">Obteniendo disponibilidad actualizada...</p>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+                
                 <!-- Calendar Content -->
                 <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
                     <div class="max-w-4xl mx-auto">

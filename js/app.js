@@ -25,6 +25,7 @@ const state = {
     calendarEvents: [], // Eventos de ocupación (iCal)
     calendarSearchTerm: '', // Buscador de propiedades en calendario
     calendarSidebarOpen: false, // Estado del sidebar en móvil
+    calendarLoading: false, // Indica si se están cargando eventos del calendario
     // Booking state
     selectedDates: [], // Array of ISO date strings (YYYY-MM-DD)
     bookingGuestCount: 1,
@@ -171,17 +172,78 @@ function setCalendarProperty(propertyId) {
     state.selectedDates = []; // Resetear selección al cambiar propiedad
     state.bookingQuote = null;
 
-    loadCalendarEvents(propertyId); // Cargar eventos reales
+    // Renderizar inmediatamente con eventos cacheados o vacíos
+    const cached = getCachedCalendarEvents(propertyId);
+    if (cached) {
+        state.calendarEvents = cached;
+        state.calendarLoading = false;
+    } else {
+        state.calendarEvents = []; // Mostrar calendario vacío mientras carga
+        state.calendarLoading = true; // Activar loading
+    }
+
     renderContent(state);
 
-    // Restaurar posición del scroll
-    // Necesitamos esperar a que se renderice
-    setTimeout(() => {
+    // Restaurar scroll INMEDIATAMENTE después del render
+    requestAnimationFrame(() => {
         const newList = document.getElementById('calendar-property-list');
         if (newList) {
             newList.scrollTop = scrollTop;
         }
-    }, 0);
+    });
+
+    // Cargar eventos en segundo plano si no hay cache
+    if (!cached) {
+        loadCalendarEventsBackground(propertyId, scrollTop);
+    }
+}
+
+/**
+ * Carga eventos en segundo plano
+ */
+async function loadCalendarEventsBackground(propertyId, scrollTop) {
+    const property = PROPERTIES_DATA.find(p => p.id === propertyId);
+    if (!property || !property.externalCalendars) {
+        state.calendarLoading = false;
+        renderContent(state);
+        return;
+    }
+
+    const urls = Object.values(property.externalCalendars).filter(url => url);
+    if (urls.length === 0) {
+        state.calendarLoading = false;
+        renderContent(state);
+        return;
+    }
+
+    try {
+        const events = await fetchAllCalendarEvents(urls);
+
+        // Solo actualizar si seguimos en la misma propiedad
+        if (state.selectedCalendarProperty === propertyId) {
+            state.calendarEvents = events;
+            state.calendarLoading = false;
+            cacheCalendarEvents(propertyId, events);
+
+            // Guardar scroll actual antes de re-renderizar
+            const list = document.getElementById('calendar-property-list');
+            const currentScroll = list ? list.scrollTop : scrollTop;
+
+            renderContent(state);
+
+            // Restaurar scroll
+            requestAnimationFrame(() => {
+                const newList = document.getElementById('calendar-property-list');
+                if (newList) {
+                    newList.scrollTop = currentScroll;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading calendar events:', error);
+        state.calendarLoading = false;
+        renderContent(state);
+    }
 }
 
 function previousMonth() {
