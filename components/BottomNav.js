@@ -27,7 +27,7 @@ export function BottomNav(activeTab) {
     }).join('');
 
     return `
-        <nav class="md:hidden flex-shrink-0 bg-white border-t border-slate-200 flex justify-around py-3 pb-safe z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around py-2 pb-safe z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] safe-area-inset-bottom">
             ${navItems}
         </nav>
     `;
