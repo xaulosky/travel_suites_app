@@ -268,6 +268,21 @@ function renderDayCard(day) {
 }
 
 /**
+ * Estado de carga
+ */
+function renderLoadingState() {
+    return `
+        <div class="max-w-6xl mx-auto p-4 md:p-6">
+            <div class="bg-white rounded-xl shadow-md p-12 text-center">
+                <div class="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-teal-600 mb-4"></div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Analizando fechas...</h3>
+                <p class="text-slate-600">Buscando check-outs en el calendario</p>
+            </div>
+        </div>
+    `;
+}
+
+/**
  * Estado vacío
  */
 function renderEmptyState() {

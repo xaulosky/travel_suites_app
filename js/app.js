@@ -33,7 +33,8 @@ const state = {
     guestDetails: { name: '', email: '', phone: '' },
     // Checkout Report state
     checkoutReportDate: new Date(),
-    checkoutReportViewMode: 'daily' // 'daily' o 'weekly'
+    checkoutReportViewMode: 'daily', // 'daily' o 'weekly'
+    checkoutReportLoading: false // Indica si se está analizando
 };
 
 /**
@@ -506,7 +507,14 @@ window.setActiveTab = (tab) => {
  */
 function setCheckoutReportDate(dateStr) {
     state.checkoutReportDate = new Date(dateStr);
+    state.checkoutReportLoading = true;
     renderContent(state);
+
+    // Simular análisis breve (el análisis es rápido pero mostramos feedback)
+    setTimeout(() => {
+        state.checkoutReportLoading = false;
+        renderContent(state);
+    }, 300);
 }
 
 /**
@@ -514,7 +522,13 @@ function setCheckoutReportDate(dateStr) {
  */
 function setCheckoutReportViewMode(mode) {
     state.checkoutReportViewMode = mode;
+    state.checkoutReportLoading = true;
     renderContent(state);
+
+    setTimeout(() => {
+        state.checkoutReportLoading = false;
+        renderContent(state);
+    }, 300);
 }
 
 /**
@@ -524,7 +538,13 @@ function navigateWeek(direction) {
     const currentDate = new Date(state.checkoutReportDate);
     currentDate.setDate(currentDate.getDate() + (direction * 7));
     state.checkoutReportDate = currentDate;
+    state.checkoutReportLoading = true;
     renderContent(state);
+
+    setTimeout(() => {
+        state.checkoutReportLoading = false;
+        renderContent(state);
+    }, 300);
 }
 
 /**
