@@ -4,6 +4,28 @@
  */
 
 /**
+ * Normaliza una fecha a formato ISO string (YYYY-MM-DD)
+ * Maneja tanto objetos Date como strings de iCal
+ */
+function normalizeDate(dateInput) {
+    if (!dateInput) return null;
+
+    // Si ya es un string ISO, retornarlo
+    if (typeof dateInput === 'string' && dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateInput;
+    }
+
+    // Si es un Date object o string de fecha, convertir a ISO
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return null;
+
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
  * Obtiene check-outs para una fecha específica
  * @param {Date} date - Fecha a analizar
  * @param {Object} state - Estado global de la app
@@ -24,16 +46,24 @@ export function getCheckoutsForDate(date, state) {
 
         // Buscar eventos que terminen en esta fecha
         propertyEvents.forEach(event => {
-            if (event.end === dateStr) {
-                const duration = calculateNights(event.start, event.end);
+            // Normalizar la fecha de fin del evento (puede ser Date o string)
+            const eventEndDate = normalizeDate(event.end);
+
+            if (eventEndDate === dateStr) {
+                const eventStartDate = normalizeDate(event.start);
+                const duration = calculateNights(eventStartDate, eventEndDate);
                 const nextBooking = findNextBooking(property.id, dateStr, propertyEvents);
 
                 checkouts.push({
                     property: property,
-                    event: event,
+                    event: {
+                        ...event,
+                        start: eventStartDate,
+                        end: eventEndDate
+                    },
                     duration: duration,
                     nextBooking: nextBooking,
-                    hasBackToBack: nextBooking && nextBooking.start === dateStr
+                    hasBackToBack: nextBooking && normalizeDate(nextBooking.start) === dateStr
                 });
             }
         });
@@ -88,12 +118,20 @@ function findNextBooking(propertyId, afterDate, events) {
 
     const futureBookings = events
         .filter(event => {
-            const eventStart = new Date(event.start);
+            const eventStart = new Date(normalizeDate(event.start));
             return eventStart >= afterDateObj;
         })
-        .sort((a, b) => new Date(a.start) - new Date(b.start));
+        .sort((a, b) => new Date(normalizeDate(a.start)) - new Date(normalizeDate(b.start)));
 
-    return futureBookings[0] || null;
+    const nextEvent = futureBookings[0];
+    if (!nextEvent) return null;
+
+    // Retornar con fechas normalizadas
+    return {
+        ...nextEvent,
+        start: normalizeDate(nextEvent.start),
+        end: normalizeDate(nextEvent.end)
+    };
 }
 
 /**
