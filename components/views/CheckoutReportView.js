@@ -283,6 +283,36 @@ function renderLoadingState() {
 }
 
 /**
+ * Estado cuando no hay calendarios cargados
+ */
+function renderNoCalendarEventsState() {
+    return `
+        <div class="bg-white rounded-xl shadow-md p-12 text-center">
+            <div class="text-6xl mb-4">📆</div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">No hay eventos de calendario cargados</h3>
+            <p class="text-slate-600 mb-6">Para ver el reporte de check-outs, primero necesitas sincronizar los calendarios.</p>
+            
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left max-w-2xl mx-auto">
+                <h4 class="font-semibold text-blue-900 mb-2">📝 Pasos para cargar eventos:</h4>
+                <ol class="list-decimal list-inside space-y-2 text-blue-800 text-sm">
+                    <li>Ve a la vista <strong>"Calendario"</strong></li>
+                    <li>Selecciona una propiedad de la lista</li>
+                    <li>Los eventos iCal se cargarán automáticamente</li>
+                    <li>Regresa a <strong>"Reporte Check-outs"</strong></li>
+                </ol>
+            </div>
+            
+            <button 
+                onclick="window.setActiveTab('calendar')"
+                class="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-semibold"
+            >
+                📅 Ir al Calendario
+            </button>
+        </div>
+    `;
+}
+
+/**
  * Estado vacío
  */
 function renderEmptyState() {
