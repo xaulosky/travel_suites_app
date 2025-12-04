@@ -30,7 +30,10 @@ const state = {
     selectedDates: [], // Array of ISO date strings (YYYY-MM-DD)
     bookingGuestCount: 1,
     bookingQuote: null,
-    guestDetails: { name: '', email: '', phone: '' }
+    guestDetails: { name: '', email: '', phone: '' },
+    // Checkout Report state
+    checkoutReportDate: new Date(),
+    checkoutReportViewMode: 'daily' // 'daily' o 'weekly'
 };
 
 /**
@@ -485,6 +488,7 @@ async function createBooking() {
     }
 }
 
+
 // Exponer funciones globales necesarias para onclick handlers
 window.setActiveTab = (tab) => {
     if (tab === 'calendar') {
@@ -496,6 +500,62 @@ window.setActiveTab = (tab) => {
     }
     setActiveTab(tab, state);
 };
+
+/**
+ * Establece la fecha del reporte de check-outs
+ */
+function setCheckoutReportDate(dateStr) {
+    state.checkoutReportDate = new Date(dateStr);
+    renderContent(state);
+}
+
+/**
+ * Cambia el modo de vista del reporte (daily/weekly)
+ */
+function setCheckoutReportViewMode(mode) {
+    state.checkoutReportViewMode = mode;
+    renderContent(state);
+}
+
+/**
+ * Navega semanas en la vista semanal
+ */
+function navigateWeek(direction) {
+    const currentDate = new Date(state.checkoutReportDate);
+    currentDate.setDate(currentDate.getDate() + (direction * 7));
+    state.checkoutReportDate = currentDate;
+    renderContent(state);
+}
+
+/**
+ * Exporta check-outs diarios a CSV
+ */
+async function exportDailyCheckouts() {
+    const { getCheckoutsForDate, exportCheckoutsToCSV } = await import('../services/checkout-report.service.js');
+    const checkouts = getCheckoutsForDate(state.checkoutReportDate, state);
+    exportCheckoutsToCSV(checkouts, state.checkoutReportDate);
+}
+
+/**
+ * Exporta check-outs semanales a CSV
+ */
+async function exportWeeklyCheckouts() {
+    const { getWeeklyCheckouts, exportWeeklyCheckoutsToCSV } = await import('../services/checkout-report.service.js');
+    const weekStart = getWeekStart(state.checkoutReportDate);
+    const weeklyData = getWeeklyCheckouts(weekStart, state);
+    exportWeeklyCheckoutsToCSV(weeklyData, weekStart);
+}
+
+/**
+ * Obtiene el inicio de la semana (lunes)
+ */
+function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+}
+
 window.setCalendarSearch = setCalendarSearch;
 window.toggleCalendarSidebar = toggleCalendarSidebar;
 window.setSearch = setSearch;
@@ -511,6 +571,12 @@ window.selectDate = selectDate;
 window.updateGuestCount = updateGuestCount;
 window.updateGuestDetails = updateGuestDetails;
 window.createBooking = createBooking;
+// Checkout Report functions
+window.setCheckoutReportDate = setCheckoutReportDate;
+window.setCheckoutReportViewMode = setCheckoutReportViewMode;
+window.navigateWeek = navigateWeek;
+window.exportDailyCheckouts = exportDailyCheckouts;
+window.exportWeeklyCheckouts = exportWeeklyCheckouts;
 
 // Inicializar cuando el DOM esté listo
 if (document.readyState === 'loading') {

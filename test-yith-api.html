@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>YITH Booking API Tester</title>
+</head>
+
+<body>
+    <h1>YITH Booking API Explorer</h1>
+    <button onclick="testEndpoints()">Test YITH Endpoints</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testEndpoints() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing...\n\n';
+
+            const endpoints = [
+                '/wp-json/yith-booking/v1',
+                '/wp-json/yith-booking/v1/bookings',
+                '/wp-json/yith-booking/v1/booking',
+                '/wp-json/wc/v3/bookings',
+                '/wp-json/wc/v3/yith-booking',
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    const url = `https://travelsuites.cl${endpoint}`;
+                    output.textContent += `Testing: ${endpoint}\n`;
+
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    output.textContent += `Status: ${response.status}\n`;
+                    output.textContent += `Response: ${JSON.stringify(data, null, 2)}\n\n`;
+                } catch (error) {
+                    output.textContent += `Error: ${error.message}\n\n`;
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
