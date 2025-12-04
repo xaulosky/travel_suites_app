@@ -13,17 +13,23 @@ import { getDepartmentInfo } from '../data/departmentInfo.js';
  */
 export async function fetchProducts() {
     try {
-        // En producción, llamar a la API de Vercel
-        // En desarrollo local con vercel dev, también funcionará
+        // Usar siempre la ruta relativa
+        // Vercel Dev la manejará correctamente en local
+        // En producción también funciona
         const apiUrl = '/api/products';
+
+        console.log('🔄 Cargando productos desde API...');
 
         const response = await fetch(apiUrl);
 
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ Error HTTP ${response.status}:`, errorText);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const products = await response.json();
+        console.log(`✅ ${products.length} productos cargados desde WooCommerce`);
 
         // Mapear productos de WooCommerce a estructura de propiedades
         return products.map(product => mapProductToProperty(product));
