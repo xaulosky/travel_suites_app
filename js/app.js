@@ -196,7 +196,7 @@ function setCalendarProperty(propertyId) {
     state.selectedDates = []; // Resetear selección al cambiar propiedad
     state.bookingQuote = null;
 
-    // Resetear estado de ocupación - requiere cargar nuevamente
+    // Resetear estado de ocupación
     state.calendarEvents = [];
     state.calendarOccupancyLoaded = false;
     state.calendarLoading = false;
@@ -210,6 +210,9 @@ function setCalendarProperty(propertyId) {
             newList.scrollTop = scrollTop;
         }
     });
+
+    // Cargar ocupación automáticamente
+    loadCalendarOccupancy(propertyId);
 }
 
 /**
@@ -494,7 +497,10 @@ window.setActiveTab = (tab) => {
         const propId = state.selectedCalendarProperty || (PROPERTIES_DATA.length > 0 ? PROPERTIES_DATA[0].id : null);
         if (propId) {
             state.selectedCalendarProperty = propId;
-            loadCalendarEvents(propId);
+            // Cargar ocupación automáticamente al entrar al calendario
+            if (!state.calendarOccupancyLoaded && !state.calendarLoading) {
+                loadCalendarOccupancy(propId);
+            }
         }
     }
     setActiveTab(tab, state);

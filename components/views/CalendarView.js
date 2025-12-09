@@ -96,8 +96,8 @@ export function CalendarView(state) {
     const isLoading = state.calendarLoading;
     const needsLoading = !state.calendarOccupancyLoaded && state.calendarEvents.length === 0;
 
-    // Si se está cargando, mostrar spinner
-    if (isLoading) {
+    // Si se está cargando o necesita cargar, mostrar spinner
+    if (isLoading || needsLoading) {
         return `
             <div class="flex flex-col lg:flex-row h-full overflow-hidden">
                 <!-- Sidebar de propiedades -->
@@ -108,35 +108,6 @@ export function CalendarView(state) {
                     <div class="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4"></div>
                     <h3 class="text-xl font-semibold text-slate-700 mb-2">Cargando ocupación...</h3>
                     <p class="text-slate-500">Consultando reservas desde la API</p>
-                </div>
-            </div>
-        `;
-    }
-
-    // Si necesita cargar datos, mostrar prompt
-    if (needsLoading) {
-        return `
-            <div class="flex flex-col lg:flex-row h-full overflow-hidden">
-                <!-- Sidebar de propiedades -->
-                ${propertyList}
-                
-                <!-- Área principal con prompt -->
-                <div class="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50">
-                    <div class="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
-                        <div class="inline-block p-4 bg-teal-100 rounded-full mb-4">
-                            <span class="text-4xl">📅</span>
-                        </div>
-                        <h3 class="text-xl font-bold text-slate-800 mb-2">${property.name}</h3>
-                        <p class="text-slate-600 mb-6">
-                            Para ver la disponibilidad, primero debes cargar las fechas de ocupación desde el servidor.
-                        </p>
-                        <button 
-                            onclick="window.loadCalendarOccupancy('${property.id}')"
-                            class="w-full px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold hover:from-teal-700 hover:to-teal-800 transition-all shadow-lg hover:shadow-xl"
-                        >
-                            🔄 Cargar Disponibilidad
-                        </button>
-                    </div>
                 </div>
             </div>
         `;

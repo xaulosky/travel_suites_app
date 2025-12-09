@@ -10,6 +10,7 @@ export function BottomNav(activeTab) {
     const tabs = [
         { id: 'properties', label: 'Propiedades', icon: ICONS.layout },
         { id: 'calendar', label: 'Calendario', icon: ICONS.calendar },
+        { id: 'checkout-report', label: 'Check-outs', icon: ICONS.calendar },
         { id: 'protocols', label: 'Protocolos', icon: ICONS.book },
         { id: 'directory', label: 'Directorio', icon: ICONS.users },
         { id: 'faq', label: 'FAQ', icon: ICONS.helpCircle },
