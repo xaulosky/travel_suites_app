@@ -199,26 +199,29 @@ function renderWeeklyView(selectedDate, checkouts, isLoading) {
  */
 function renderCheckoutCard(booking) {
     const productName = booking.product_name || 'Propiedad sin nombre';
-    const guestName = booking.guest_name || booking.billing?.first_name || 'Huésped no registrado';
-    const checkIn = booking.start_date || 'N/A';
-    const checkOut = booking.end_date || 'N/A';
-    const nights = booking.nights || calculateNights(checkIn, checkOut);
+    const guestName = booking.guest_name || booking.summary || 'Reserva externa';
+    const checkIn = booking.from || booking.start_date || 'N/A';
+    const checkOut = booking.to || booking.end_date || 'N/A';
+    const nights = booking.duration || booking.nights || calculateNights(checkIn, checkOut);
     const source = booking.source || 'TravelSuites';
     const status = booking.status || 'confirmed';
+    const isExternal = booking.is_external || false;
 
     // Badge según origen
     let sourceBadge = '';
-    if (source === 'airbnb') {
+    if (source === 'airbnb' || (isExternal && guestName.toLowerCase().includes('airbnb'))) {
         sourceBadge = '<span class="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full">Airbnb</span>';
-    } else if (source === 'booking') {
+    } else if (source === 'booking' || (isExternal && guestName.toLowerCase().includes('booking'))) {
         sourceBadge = '<span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">Booking</span>';
+    } else if (isExternal || source === 'external') {
+        sourceBadge = '<span class="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full">Externa</span>';
     } else {
         sourceBadge = '<span class="bg-teal-100 text-teal-700 text-xs px-2 py-1 rounded-full">Directo</span>';
     }
 
     // Badge de estado
     let statusBadge = '';
-    if (status === 'confirmed' || status === 'paid') {
+    if (status === 'confirmed' || status === 'paid' || status === 'external') {
         statusBadge = '<span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">✓ Confirmado</span>';
     } else if (status === 'pending') {
         statusBadge = '<span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">⏳ Pendiente</span>';

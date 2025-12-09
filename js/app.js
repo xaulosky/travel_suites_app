@@ -6,6 +6,7 @@ import { calculateQuote, formatDateAPI } from '../services/booking.service.js';
 import { fetchAllCalendarEvents, isDateOccupied, getCachedCalendarEvents, cacheCalendarEvents } from '../services/calendar.service.js';
 import { loadAllCalendarEvents } from '../services/calendar-loader.service.js';
 import { loadCheckoutsFromAPI } from '../components/views/CheckoutReportView.js';
+import { fetchBookings } from '../services/travelsuites.service.js';
 import { PROPERTIES_DATA, PROPERTIES_DATA_FALLBACK } from '../data/data.js';
 
 /**
@@ -28,6 +29,7 @@ const state = {
     calendarSearchTerm: '', // Buscador de propiedades en calendario
     calendarSidebarOpen: false, // Estado del sidebar en móvil
     calendarLoading: false, // Indica si se están cargando eventos del calendario
+    calendarOccupancyLoaded: false, // Indica si ya se cargaron los datos de ocupación
     // Booking state
     selectedDates: [], // Array of ISO date strings (YYYY-MM-DD)
     bookingGuestCount: 1,
@@ -194,15 +196,10 @@ function setCalendarProperty(propertyId) {
     state.selectedDates = []; // Resetear selección al cambiar propiedad
     state.bookingQuote = null;
 
-    // Renderizar inmediatamente con eventos cacheados o vacíos
-    const cached = getCachedCalendarEvents(propertyId);
-    if (cached) {
-        state.calendarEvents = cached;
-        state.calendarLoading = false;
-    } else {
-        state.calendarEvents = []; // Mostrar calendario vacío mientras carga
-        state.calendarLoading = true; // Activar loading
-    }
+    // Resetear estado de ocupación - requiere cargar nuevamente
+    state.calendarEvents = [];
+    state.calendarOccupancyLoaded = false;
+    state.calendarLoading = false;
 
     renderContent(state);
 
@@ -213,11 +210,6 @@ function setCalendarProperty(propertyId) {
             newList.scrollTop = scrollTop;
         }
     });
-
-    // Cargar eventos en segundo plano si no hay cache
-    if (!cached) {
-        loadCalendarEventsBackground(propertyId, scrollTop);
-    }
 }
 
 /**
@@ -634,13 +626,26 @@ async function loadAPICheckouts(dateStr) {
 
     try {
         const date = new Date(dateStr);
+        console.log(`🔍 Consultando check-outs para fecha: ${dateStr}`);
+
         const response = await loadCheckoutsFromAPI(date);
 
+        // DEBUG: Mostrar respuesta cruda de la API
+        console.log('📦 Respuesta RAW de la API:', response);
+        console.log('📦 Tipo de respuesta:', typeof response);
+        console.log('📦 Es array?:', Array.isArray(response));
+        if (response && typeof response === 'object') {
+            console.log('📦 Keys del objeto:', Object.keys(response));
+        }
+
         // Asegurar que siempre sea un array
-        // La API puede devolver: un array directo, un objeto con data, o undefined
+        // La API devuelve: { success: true, data: { checkouts: [...], count, date } }
         let checkouts = [];
         if (Array.isArray(response)) {
             checkouts = response;
+        } else if (response && response.success && response.data && Array.isArray(response.data.checkouts)) {
+            // Estructura: { success: true, data: { checkouts: [...] } }
+            checkouts = response.data.checkouts;
         } else if (response && Array.isArray(response.data)) {
             checkouts = response.data;
         } else if (response && typeof response === 'object') {
@@ -648,6 +653,7 @@ async function loadAPICheckouts(dateStr) {
             checkouts = response.checkouts || response.items || response.results || [];
         }
 
+        console.log('📋 Checkouts procesados:', checkouts);
         state.apiCheckouts = checkouts;
         console.log(`✅ ${checkouts.length} check-outs cargados desde API`);
     } catch (error) {
@@ -656,6 +662,57 @@ async function loadAPICheckouts(dateStr) {
         alert('Error al cargar datos desde la API. Intente nuevamente.');
     } finally {
         state.apiCheckoutsLoading = false;
+        renderContent(state);
+    }
+}
+
+
+/**
+ * Carga la ocupación del calendario desde la API de TravelSuites
+ * para una propiedad específica
+ */
+async function loadCalendarOccupancy(propertyId) {
+    if (state.calendarLoading) return;
+
+    state.calendarLoading = true;
+    state.calendarEvents = [];
+    renderContent(state);
+
+    console.log(`🔄 Cargando ocupación para propiedad: ${propertyId}`);
+
+    try {
+        // Obtener todas las reservas para esta propiedad
+        const response = await fetchBookings({ product_id: propertyId, per_page: 100 });
+
+        // Convertir reservas a eventos de calendario
+        let bookings = [];
+        if (Array.isArray(response)) {
+            bookings = response;
+        } else if (response && Array.isArray(response.data)) {
+            bookings = response.data;
+        } else if (response && typeof response === 'object') {
+            bookings = response.bookings || response.items || response.results || [];
+        }
+
+        // Convertir a formato de eventos de calendario
+        const events = bookings.map(booking => ({
+            start: new Date(booking.start_date || booking.date_from),
+            end: new Date(booking.end_date || booking.date_to),
+            summary: booking.guest_name || booking.billing?.first_name || 'Reserva',
+            propertyId: propertyId,
+            source: booking.source || 'travelsuites',
+            status: booking.status
+        })).filter(event => event.start && event.end);
+
+        state.calendarEvents = events;
+        state.calendarOccupancyLoaded = true;
+        console.log(`✅ ${events.length} reservas cargadas para el calendario`);
+    } catch (error) {
+        console.error('❌ Error cargando ocupación:', error);
+        state.calendarEvents = [];
+        state.calendarOccupancyLoaded = true; // Marcar como cargado aunque sin datos
+    } finally {
+        state.calendarLoading = false;
         renderContent(state);
     }
 }
@@ -687,6 +744,7 @@ window.loadAllCalendarsForReport = loadAllCalendarsForReport;
 // TravelSuites API functions
 window.setCheckoutDataSource = setCheckoutDataSource;
 window.loadAPICheckouts = loadAPICheckouts;
+window.loadCalendarOccupancy = loadCalendarOccupancy;
 
 // Inicializar cuando el DOM esté listo
 if (document.readyState === 'loading') {
