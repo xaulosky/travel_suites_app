@@ -4,6 +4,8 @@ import { copyToClipboard } from './utils.js';
 import { fetchProducts, getCachedProducts, cacheProducts, createOrder } from '../services/woocommerce.service.js';
 import { calculateQuote, formatDateAPI } from '../services/booking.service.js';
 import { fetchAllCalendarEvents, isDateOccupied, getCachedCalendarEvents, cacheCalendarEvents } from '../services/calendar.service.js';
+import { loadAllCalendarEvents } from '../services/calendar-loader.service.js';
+import { loadCheckoutsFromAPI } from '../components/views/CheckoutReportView.js';
 import { PROPERTIES_DATA, PROPERTIES_DATA_FALLBACK } from '../data/data.js';
 
 /**
@@ -34,7 +36,11 @@ const state = {
     // Checkout Report state
     checkoutReportDate: new Date(),
     checkoutReportViewMode: 'daily', // 'daily' o 'weekly'
-    checkoutReportLoading: false // Indica si se está analizando
+    checkoutReportLoading: false, // Indica si se está analizando
+    // TravelSuites API state
+    checkoutDataSource: 'ical', // 'ical' o 'api'
+    apiCheckouts: null, // Datos de check-outs desde la API
+    apiCheckoutsLoading: false // Indica si se están cargando desde API
 };
 
 /**
@@ -576,6 +582,72 @@ function getWeekStart(date) {
     return new Date(d.setDate(diff));
 }
 
+/**
+ * Carga todos los calendarios para el reporte de check-outs
+ */
+async function loadAllCalendarsForReport() {
+    // Evitar cargar múltiples veces
+    if (state.checkoutReportLoading) return;
+
+    console.log('🔄 Cargando todos los calendarios para el reporte...');
+    state.checkoutReportLoading = true;
+    state.calendarEvents = []; // Limpiar eventos anteriores
+    renderContent(state);
+
+    try {
+        const events = await loadAllCalendarEvents(PROPERTIES_DATA);
+        state.calendarEvents = events;
+        console.log(`✅ ${events.length} eventos cargados de ${PROPERTIES_DATA.length} propiedades`);
+        console.log('📊 Eventos por propiedad:', events.reduce((acc, e) => {
+            acc[e.propertyName] = (acc[e.propertyName] || 0) + 1;
+            return acc;
+        }, {}));
+    } catch (error) {
+        console.error('❌ Error cargando calendarios:', error);
+    } finally {
+        state.checkoutReportLoading = false;
+        renderContent(state);
+    }
+}
+
+/**
+ * Cambia la fuente de datos para check-outs (iCal o API)
+ */
+function setCheckoutDataSource(source) {
+    state.checkoutDataSource = source;
+    // Limpiar datos de API al cambiar a iCal
+    if (source === 'ical') {
+        state.apiCheckouts = null;
+    }
+    renderContent(state);
+}
+
+/**
+ * Carga check-outs desde la API de TravelSuites
+ */
+async function loadAPICheckouts(dateStr) {
+    if (state.apiCheckoutsLoading) return;
+
+    state.apiCheckoutsLoading = true;
+    state.apiCheckouts = null;
+    renderContent(state);
+
+    try {
+        const date = new Date(dateStr);
+        const checkouts = await loadCheckoutsFromAPI(date);
+        state.apiCheckouts = checkouts;
+        console.log(`✅ ${checkouts.length} check-outs cargados desde API`);
+    } catch (error) {
+        console.error('❌ Error cargando check-outs desde API:', error);
+        state.apiCheckouts = [];
+        alert('Error al cargar datos desde la API. Intente nuevamente.');
+    } finally {
+        state.apiCheckoutsLoading = false;
+        renderContent(state);
+    }
+}
+
+
 window.setCalendarSearch = setCalendarSearch;
 window.toggleCalendarSidebar = toggleCalendarSidebar;
 window.setSearch = setSearch;
@@ -597,6 +669,11 @@ window.setCheckoutReportViewMode = setCheckoutReportViewMode;
 window.navigateWeek = navigateWeek;
 window.exportDailyCheckouts = exportDailyCheckouts;
 window.exportWeeklyCheckouts = exportWeeklyCheckouts;
+window.loadAllCalendarsForReport = loadAllCalendarsForReport;
+
+// TravelSuites API functions
+window.setCheckoutDataSource = setCheckoutDataSource;
+window.loadAPICheckouts = loadAPICheckouts;
 
 // Inicializar cuando el DOM esté listo
 if (document.readyState === 'loading') {

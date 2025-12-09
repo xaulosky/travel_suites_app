@@ -67,10 +67,8 @@ export async function fetchCalendarEvents(url) {
     if (!url) return [];
 
     try {
-        // IMPORTANTE: Las URLs de iCal tienen restricciones CORS
-        // En producción, necesitarías un proxy backend
-        // Por ahora, usamos un servicio CORS proxy público
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        // Usar nuestro proxy de Vercel
+        const proxyUrl = `/api/ical-proxy?url=${encodeURIComponent(url)}`;
 
         const response = await fetch(proxyUrl);
         if (!response.ok) {

@@ -1,0 +1,14 @@
+// INSTRUCCIÓN: Abre components/views/CheckoutReportView.js
+// Busca la línea 9 que dice:
+//     const viewMode = state.checkoutReportViewMode || 'daily'; // 'daily' o 'weekly'
+//
+// Después de esa línea, agrega estas 5 líneas:
+
+    
+    // Mostrar loader mientras se cargan calendarios
+    if (state.checkoutReportLoading) {
+        return renderLoadingState();
+    }
+
+// ¡Eso es todo! Guarda el archivo y recarga la página.
+// El loader dejará de girar automáticamente cuando termine de cargar todos los calendarios.

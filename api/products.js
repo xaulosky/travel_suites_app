@@ -43,9 +43,9 @@ export default async function handler(req, res) {
 
         console.log('Fetching from WooCommerce...');
 
-        // Hacer petición a WooCommerce con timeout
+        // Hacer petición a WooCommerce con timeout aumentado
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000); // 8 segundos
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30 segundos (aumentado para conexiones lentas)
 
         const response = await fetch(url, {
             signal: controller.signal,
