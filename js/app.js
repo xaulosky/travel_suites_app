@@ -634,7 +634,20 @@ async function loadAPICheckouts(dateStr) {
 
     try {
         const date = new Date(dateStr);
-        const checkouts = await loadCheckoutsFromAPI(date);
+        const response = await loadCheckoutsFromAPI(date);
+
+        // Asegurar que siempre sea un array
+        // La API puede devolver: un array directo, un objeto con data, o undefined
+        let checkouts = [];
+        if (Array.isArray(response)) {
+            checkouts = response;
+        } else if (response && Array.isArray(response.data)) {
+            checkouts = response.data;
+        } else if (response && typeof response === 'object') {
+            // Intentar extraer datos de otras estructuras posibles
+            checkouts = response.checkouts || response.items || response.results || [];
+        }
+
         state.apiCheckouts = checkouts;
         console.log(`✅ ${checkouts.length} check-outs cargados desde API`);
     } catch (error) {
